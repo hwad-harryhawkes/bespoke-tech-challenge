@@ -21,6 +21,32 @@ class ItemsController extends Controller
         ]);
     }
 
+    // Function to allow search of name and type on the items table
+    /**
+     * possible request params:
+     * search - free text to search against an item name
+     * type - enum to search against item content_type
+     */
+    public function getAll() {
+        // request params
+        $search = request()->input('search') != '' ? request()->input('search') : null;
+        $type = request()->input('type') != '' ? request()->input('type') : null;
+
+        // new empty item model instance
+        $items = new Item();
+        
+        // search query against name by $search param - NOTE: the like SQL operator
+        if ($search != null) {
+            $items = $items->where('name', 'like', '%' . $search . '%');
+        }
+        // search query against type by $type param
+        if ($type != null) {
+            $items = $items->where('content_type', $type);
+        }
+        // return the results - type and search queries are appended to base query
+        return $items->get();
+    }
+
     public function create(): Response
     {
         return Inertia::render('Items/Create', []);
@@ -72,5 +98,15 @@ class ItemsController extends Controller
         $item->push();
 
         return redirect()->route('admin.items.index')->with('message', 'Successfully Updated Item');
+    }
+
+    // delete an item from the DB
+    /**
+     * Request params:
+     * id - the id of the item being deleted
+     */
+    public function destroy() {
+        Item::find(request()->input('id'))->delete();
+        return redirect()->back()->with('success', 'Item deleted successfully.');
     }
 }

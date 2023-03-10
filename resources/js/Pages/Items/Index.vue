@@ -1,17 +1,50 @@
-<script setup>
+<script>
 import BreezeAuthenticatedLayout from '@/Layouts/Authenticated.vue';
 import { Head } from '@inertiajs/inertia-vue3';
 import { defineProps } from "vue";
 import { Link } from '@inertiajs/inertia-vue3';
 
-const props = defineProps({
-    items: Array
-})
+export default {
+    name: "AllItems",
+    components: {
+        BreezeAuthenticatedLayout,
+        Head,
+        Link
+    },
+    data() {
+        return {
+            items: [],
+            searchWord: '',
+            filterType: ''
+        }
+    },
+    methods: {
+        getItems() {
+            axios.post(route('items.getall'), {
+                search: this.searchWord,
+                type: this.filterType
+            }).then(res => {
+                this.items = res.data;
+                console.log(res.data); return;
+            })
+        },
+        deleteItem(id) {
+            axios.post(route('items.delete'), {
+                id: id
+            }).then(res => {
+                location.reload();
+            })
+        }
+    },
+    created() {
+        this.getItems();
+    }
+}
+
 </script>
 
 <template>
-    <Head title="Dashboard" />
-
+    <Head title="All Items" />
     <BreezeAuthenticatedLayout>
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -27,6 +60,25 @@ const props = defineProps({
                             <h3 class="text-2xl">Items</h3>
                             <Link :href="route('admin.items.create')" class="w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Create Item</Link>
 
+                        </div>
+
+                        <div class="flex justify-start align-center items-center">
+                            <div>
+                                <input @keydown="getItems" type="text" placeholder="Search items..." v-model="searchWord">
+                            </div>
+                            <div>
+                                <select @change="getItems" v-model="filterType">
+                                    <option value="">All</option>
+                                    <option value="download">Download</option>
+                                    <option value="info">Info</option>
+                                    <option value="WEBLINK">Weblink</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p>
+                                <span class="text-gray-600"> Rows: </span> {{ items.length }}
+                            </p>
                         </div>
 
                         <div class="mt-8 flex flex-col">
@@ -46,7 +98,13 @@ const props = defineProps({
                                             </tr>
                                             </thead>
                                             <tbody class="divide-y divide-gray-200 bg-white">
-                                            <tr v-for="item in items" :key="item.id">
+                                            <!-- no items row if items array is empty -->
+                                            <tr v-if="items.length == 0">
+                                                <td colspan="4" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                    No items to show.
+                                                </td>
+                                            </tr>
+                                            <tr v-for="item in items" v-else :key="item.id">
                                                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ item.name }}</td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ item.content_type }}</td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ item.active ? 'Active' : 'Inactive' }}</td>
@@ -54,6 +112,10 @@ const props = defineProps({
                                                     <Link class="text-indigo-600 hover:text-indigo-900 cursor-pointer"
                                                         :href="route('admin.items.edit', item.id)">
                                                         Edit
+                                                    </Link>
+                                                    <Link class="text-red-600 hover:text-red-900 ml-2 cursor-pointer"
+                                                        href="#" @click="deleteItem(item.id)">
+                                                        Delete
                                                     </Link>
                                                 </td>
                                             </tr>

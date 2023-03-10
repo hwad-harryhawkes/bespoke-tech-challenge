@@ -27,6 +27,14 @@ Route::get('/', function () {
     ]);
 });
 
+// get all items from db from an axios call from frontend
+Route::post('/items/all', [ItemsController::class, 'getAll'])
+->middleware(['auth', 'verified', 'can:viewAny,App\Models\Item'])->name('items.getall');
+
+// Delete an item from db
+Route::post('/items/delete', [ItemsController::class, 'destroy'])
+->middleware(['auth', 'verified', 'can:viewAny,App\Models\Item'])->name('items.delete');
+
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])
     ->name('dashboard');
 
